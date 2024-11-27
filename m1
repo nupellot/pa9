@@ -1,0 +1,8 @@
+plot: run
+	gnuplot m1.gnu
+
+run: compile
+	./a.out
+
+compile:
+	c++ main.cpp

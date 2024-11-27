@@ -1,5 +1,5 @@
 plot: run
-	gnuplot graph.gnu
+	gnuplot m2.gnu
 
 run: compile
 	./a.out
