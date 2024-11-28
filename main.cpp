@@ -3,32 +3,34 @@
 #include <iostream>
 
 using namespace std;
-#define Pi 3.141592653589793
-#define delta_t_appr 1e-10
-#define delta_t_min 1e-12
-#define end_time 1e-3
-#define epsilon 1e-5 // X
-#define E1 1
-#define R1 1e3
-#define R2 1e3
-#define Rb1 20.0
-#define Rb2 1e6
-#define L1 1e-3
-#define Cb1 2e-12
-#define C1 1e-6
-#define Id1 1e-12
-#define MFt 0.026
-#define vector_size 70000
-#define eps1 1e-15
-#define eps2 1e-5
-#define appr 0.0
-#define C2 1e-6
 
+#define Pi 3.141592653589793  // Значение числа Пи
+#define delta_t_appr 1e-10    // Начальный шаг по времени для аппроксимации
+#define delta_t_min 1e-14     // Минимальный шаг по времени
+#define end_time 1e-3         // Время моделирования (конечное)
+#define epsilon 1e-5          // Погрешность для итераций
+#define E1 1                   // Напряжение источника E1
+#define R1 1e3                 // Сопротивление R1
+#define R2 1e3                 // Сопротивление R2
+#define Rb1 20.0               // Сопротивление Rb1
+#define Rb2 1e6                // Сопротивление Rb2
+#define L1 1e-3                // Индуктивность L1
+#define Cb1 2e-12              // Ёмкость Cb1
+#define C1 1e-6                // Ёмкость C1
+#define Id1 1e-12              // Ток Id1
+#define MFt 0.026              // Параметр MFt (параметр для экспоненты)
+#define vector_size 70000      // Размер вектора для хранения результатов
+#define eps1 1e-15             // Минимальная погрешность для оценки точности
+#define eps2 1e-5              // Погрешность для принятия шага времени
+#define appr 0.0               // Начальная аппроксимация для всех переменных
+#define C2 1e-6                // Ёмкость C2
+
+// Объявление всех переменных, которые будут использоваться для хранения значений в процессе моделирования.
 double U_R1, U_R2, U_Rb1, U_Rb2, U_Id1, I_E1, I_E2, I_L1, I_Cb1, I_C1, I_R1,
 I_R2, I_Rb1, I_Rb2, I_Id1, U_E1, U_E2, U_L1, U_Cb1, U_C1, I_L1_pred, U_C2, I_C2,
 U_Cb1_pred, U_C1_pred, I_C2_pred, U_C2_pred, U_L1_pred;
 
-
+// Прототипы всех функций, которые будут использоваться в программе.
 double* gauss(double ** a, double * y, int n);
 double norm(double * result, int step, double delta_t, double delta_t_pred, int n);
 int check_if_vector_less_than_eps(double * x, int n);
@@ -44,39 +46,41 @@ void fill_y(double * y,
             double I_R1, double I_R2, double I_Rb1, double I_Rb2, double I_Id1, double I_L1, 
             double U_E1, double U_E2, double U_C2, double U_Cb1, double U_C1, 
             double U_Cb1_pred, double U_C1_pred, double I_C2_pred, double U_C2_pred, double U_L1_pred,
-            double delta_t, int n, double time
-);
+            double delta_t, int n, double time);
 void fill_A(double ** a, double U_Id1, double delta_t);
 
-
-// Используется итерационный метод для нахождения решения системы дифференциальных уравнений с адаптивным шагом по времени.
+// Основная функция для решения системы дифференциальных уравнений с использованием итерационного метода.
 int main() {
-    int n = 22;
-    int n_iter = 0;
-    double time = 0.0;
-    double ** a = new double * [n];
-    double * y = new double[n], * x;
-    double * result = new double[vector_size];
-    result[0] = time;
-    make_appr(result, n);
-    double delta_t = delta_t_appr, delta_t_pred = 0.0, eps = 0.0;
-    int flag = 1;
-    int step = 1;
-    int time_step = 0;
-    int iter_step = 0;
+    int n = 22;               // Размер системы линейных уравнений (22 переменные)
+    int n_iter = 0;           // Счётчик числа итераций
+    double time = 0.0;        // Текущее время моделирования
+    double ** a = new double * [n]; // Матрица коэффициентов для системы уравнений
+    double * y = new double[n], * x; // Векторы правой части и решения системы
+    double * result = new double[vector_size]; // Массив для хранения результатов
+    result[0] = time;          // Инициализация начального времени
+    make_appr(result, n);      // Инициализация значений переменных для аппроксимации
+    double delta_t = delta_t_appr, delta_t_pred = 0.0, eps = 0.0; // Начальный шаг по времени
+    int flag = 1;              // Флаг для проверки сходимости итераций
+    int step = 1;              // Счётчик шагов моделирования
+    int time_step = 0;         // Счётчик временных шагов
+    int iter_step = 0;         // Счётчик числа шагов в каждой итерации
+    
+    // Основной цикл моделирования
     while (time < end_time) {
-        get_pred_variables(result, n, step);
-        time_step++;
-        while (flag) {
+        get_pred_variables(result, n, step);  // Получаем предсказанные значения переменных
+        time_step++;                          // Увеличиваем счётчик временных шагов
+        
+        while (flag) {  // Пока не будет достигнута сходимость, продолжаем итерации
             for (int i = 0; i < n; i++) {
-                a[i] = new double[n];
-                y[i] = 0.0;
+                a[i] = new double[n];  // Выделяем память для матрицы коэффициентов
+                y[i] = 0.0;            // Инициализируем вектор правой части нулями
                 for (int j = 0; j < n; j++)
-                    a[i][j] = 0.0;
+                    a[i][j] = 0.0;    // Инициализируем элементы матрицы значениями 0
             }
-            iter_step++;
-            n_iter++;
-            fill_A(a, U_Id1, delta_t);
+            
+            iter_step++;         // Увеличиваем шаг итерации
+            n_iter++;            // Увеличиваем общее число итераций
+            fill_A(a, U_Id1, delta_t);  // Заполняем матрицу A для системы уравнений
             fill_y(y, 
                         U_R1, U_R2, U_Rb1, U_Rb2, U_Id1, U_L1, 
                         I_E1, I_E2, I_C2, I_Cb1, I_C1, 
@@ -84,81 +88,76 @@ int main() {
                         U_E1, U_E2, U_C2, U_Cb1, U_C1, 
                         U_Cb1_pred, U_C1_pred, I_C2_pred, U_C2_pred, U_L1_pred,
                         delta_t, n, time
-            );
-            // cout << "time: " << time << endl;
-            // cout << "delta_t: " << delta_t << endl;
-            x = gauss(a, y, n);
-            add_phi(x);
+            ); // Заполняем вектор правой части системы уравнений
+            x = gauss(a, y, n);  // Решаем систему линейных уравнений методом Гаусса
+            add_phi(x);          // Корректируем значения переменных на основе решения системы
+            
+            // Проверка сходимости (если все элементы вектора меньше заданной погрешности)
             if (check_if_vector_less_than_eps(x, n) == n) {
                 n_iter = 0;
-                flag = 0;
+                flag = 0;  // Если сходимость достигнута, выходим из итераций
             } else {
+                // Если не достигнута сходимость за 7 итераций, уменьшаем шаг по времени
                 if (n_iter > 7) {
                     delta_t = delta_t / 2;
                     n_iter = 0;
-                    return_past_results(result, n, step);
+                    return_past_results(result, n, step);  // Возвращаем предыдущие результаты
                     if (delta_t < delta_t_min) {
-                        cout << "Solution doesn't converge" << endl;
-                        exit(0);
+                        cout << "Solution doesn't converge" << endl;  // Если шаг слишком мал, выводим ошибку
+                        exit(0);  // Выход из программы
                     }
                 }
             }
         }
+        
+        // Обработка сохранённых данных и корректировка шага времени в зависимости от погрешности
         if (step == 1 && time == 0.0) {
-            step = 0;
+            step = 0;  // Если это первый шаг моделирования, устанавливаем его как 0
         }
-        save_step_results(result, n, step, time);
-        delta_t_pred = delta_t;
-        // cout << time << endl;
+        save_step_results(result, n, step, time);  // Сохраняем результаты текущего шага
+        delta_t_pred = delta_t;  // Предсказанный шаг времени для следующего шага
+        
+        // Оценка погрешности для адаптивного шага времени
         if (step > 0) {
-            eps = norm(result, step, delta_t, delta_t_pred, n);
-            // cout<<eps<<endl;
-            if (eps < eps1) {
+            eps = norm(result, step, delta_t, delta_t_pred, n);  // Вычисляем норму ошибки
+            if (eps < eps1) {  // Если погрешность мала, увеличиваем шаг времени
+                time += delta_t;  // Переходим к следующему времени
+                delta_t_pred = delta_t;
+                delta_t = 2 * delta_t;  // Увеличиваем шаг времени
+            }
+            if (eps > eps1 && eps < eps2) {  // Если погрешность в промежутке, оставляем шаг времени
                 time += delta_t;
                 delta_t_pred = delta_t;
-                delta_t = 2 * delta_t;
-                for (int i = 1; i < n + 1; i++) {
-                    if (step > 1) {
-                        result[(step - 2) * (n + 1) + i] = result[(step - 1) * (n + 1) + i];
-                        result[(step - 1) * (n + 1) + i] = result[step * (n + 1) + i];
-                    }
-                }
             }
-            if (eps > eps1 && eps < eps2) {
-                time += delta_t;
-                delta_t_pred = delta_t;
-                for (int i = 1; i < n + 1; i++) {
-                    if (step > 2) {
-                        result[(step - 2) * (n + 1) + i] = result[(step - 1) * (n + 1) + i];
-                        result[(step - 1) * (n + 1) + i] = result[step * (n + 1) + i];
-                    }
-                }
-            }
-            if (eps > eps2) {
-                time += 0;
+            if (eps > eps2) {  // Если погрешность велика, уменьшаем шаг времени
+                time += 0;  // Время не увеличиваем
                 delta_t = delta_t / 2;
-                for (int i = 1; i < n + 1; i++)
-                    if (step >= 1) {
-                        result[step * (n + 1) + i] = result[(step - 1) * (n + 1) + i];
-                    }
             }
-        } else {
+        } else {  // Для первого шага времени уменьшаем шаг по времени
             delta_t = delta_t / 2;
             time += delta_t;
         }
-        step++;
-        flag = 1;
+        step++;  // Увеличиваем счётчик шагов
+        flag = 1;  // Обнуляем флаг для следующей итерации
     }
+
+    // Если моделирование завершено, выводим успех
     cout << "success" << endl;
-    cout << "Time steps: " << time_step << endl;
-    
-    result_to_csv(result, step, n);
+    cout << "Time steps: " << time_step << endl;  // Выводим количество шагов по времени
+
+    result_to_csv(result, step, n);  // Сохраняем результаты в CSV файл
+
+    // Освобождаем память, выделенную для матриц и векторов
     delete[] y;
     delete[] result;
-    for (int i = 0; i < n; i++)
+    for (int i = 0; i < n; i++) {
         delete[] a[i];
-    return 0;
+    }
+
+    return 0;  // Завершаем выполнение программы
 }
+
+
 
 
 // Реализует метод Гаусса для решения системы линейных уравнений.
