@@ -163,8 +163,8 @@ void fill_A(double **a, double U_Id1, double delta_t)
     a[18][18] = -Cb1 / delta_t;
     a[19][19] = -C1 / delta_t;
 
-    a[0][16] = 1.0;
-    a[0][17] = -1.0;
+    a[0][16] = -1.0;
+    a[0][17] = +1.0;
 
     a[1][19] = -1.0;
 
@@ -180,10 +180,10 @@ void fill_A(double **a, double U_Id1, double delta_t)
 
     a[5][12] = 1.0;
 
-    a[6][10] = -1.0;
+    a[6][10] = +1.0;
     a[6][12] = 1.0;
 
-    a[7][10] = 1.0;
+    a[7][10] = -1.0;
     a[7][12] = -1.0;
 
     a[8][12] = -1.0;
@@ -214,14 +214,14 @@ void fill_y(double *y, double U_R1, double U_R2, double U_Rb1, double U_Rb2,
             double I_R1, double I_R2, double I_Rb1, double I_Rb2, double I_Id1, double U_E1, double U_E2, double U_L1, double U_Cb1, double U_C1,
             double I_L1_pred, double U_Cb1_pred, double U_C1_pred, double delta_t, int n, double time)
 {
-    y[0] = U_R1 + U_E2 - U_L1;
+    y[0] = U_R1 - U_E2 + U_L1;
     y[1] = U_R2 - U_C1;
     y[2] = U_Rb1 - U_E1 - U_E2 + U_L1 + U_Cb1 + U_C1;
     y[3] = U_Rb2 - U_Cb1;
     y[4] = U_Id1 - U_Cb1;
     y[5] = I_E1 + I_Rb1;
-    y[6] = I_E2 - I_R1 + I_Rb1;
-    y[7] = I_L1 + I_R1 - I_Rb1;
+    y[6] = I_E2 + I_R1 + I_Rb1;
+    y[7] = I_L1 - I_R1 - I_Rb1;
     y[8] = I_Cb1 - I_Rb1 + I_Rb2 + I_Id1;
     y[9] = I_C1 + I_R2 - I_Rb1;
     y[10] = I_R1 - U_R1 / R1;
