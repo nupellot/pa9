@@ -14,7 +14,7 @@ using namespace std;
 #define R2 1e3                   // Сопротивление R2 в Омах
 #define Rb1 20.0                 // Сопротивление Rb1 в Омах
 #define Rb2 1e6                  // Сопротивление Rb2 в Омах
-#define L1 1e-3                  // Индуктивность L1 в Генри
+#define C2 1e-6                  // Индуктивность C2 в Генри
 #define Cb1 2e-12                // Емкость Cb1 в Фарадах
 #define C1 1e-6                  // Емкость C1 в Фарадах
 #define Id1 1e-12                // Ток насыщения диода Id1 в Амперах
@@ -25,9 +25,9 @@ using namespace std;
 #define appr 0.0                 // Начальное значение приближения
 
 // Объявление глобальных переменных, представляющих напряжения узлов и токи ветвей
-double U_R1, U_R2, U_Rb1, U_Rb2, U_Id1, I_E1, I_E2, I_L1, I_Cb1, I_C1,
-    I_R1, I_R2, I_Rb1, I_Rb2, I_Id1, U_E1, U_E2, U_L1, U_Cb1, U_C1,
-    I_L1_pred, U_Cb1_pred, U_C1_pred;
+double U_R1, U_R2, U_Rb1, U_Rb2, U_Id1, I_E1, I_E2, I_C2, I_Cb1, I_C1,
+    I_R1, I_R2, I_Rb1, I_Rb2, I_Id1, U_E1, U_E2, U_C2, U_Cb1, U_C1,
+    U_Cb1_pred, U_C1_pred, U_C2_pred;
 
 /**
  * Выполняет метод Гаусса для решения системы линейных уравнений Ax = y.
@@ -116,7 +116,7 @@ void result_to_csv(double *result, int step, int n)
     ofstream fs;
     fs.open("result.csv"); // Открытие (или создание) CSV файла
     // Запись заголовков столбцов
-    fs << "time,U_R1,U_R2,U_Rb1,U_Rb2,U_Id1,I_E1,I_E2,I_L1,I_Cb1,I_C1,I_R1,I_R2,I_Rb1,IRb2,I_Id1,U_E1,U_E2,U_L1,U_Cb1,U_C1" << endl;
+    fs << "time,U_R1,U_R2,U_Rb1,U_Rb2,U_Id1,I_E1,I_E2,I_C2,I_Cb1,I_C1,I_R1,I_R2,I_Rb1,IRb2,I_Id1,U_E1,U_E2,U_C2,U_Cb1,U_C1" << endl;
     // Итерация по каждому временному шагу и запись соответствующих значений
     for (int s = 0; s < step; s++)
     {
@@ -128,7 +128,7 @@ void result_to_csv(double *result, int step, int n)
         fs << result[s * (n + 1) + 5] << ","; // U_Id1
         fs << result[s * (n + 1) + 6] << ","; // I_E1
         fs << result[s * (n + 1) + 7] << ","; // I_E2
-        fs << result[s * (n + 1) + 8] << ","; // I_L1
+        fs << result[s * (n + 1) + 8] << ","; // I_C2
         fs << result[s * (n + 1) + 9] << ","; // I_Cb1
         fs << result[s * (n + 1) + 10] << ","; // I_C1
         fs << result[s * (n + 1) + 11] << ","; // I_R1
@@ -138,7 +138,7 @@ void result_to_csv(double *result, int step, int n)
         fs << result[s * (n + 1) + 15] << ","; // I_Id1
         fs << result[s * (n + 1) + 16] << ","; // U_E1
         fs << result[s * (n + 1) + 17] << ","; // U_E2
-        fs << result[s * (n + 1) + 18] << ","; // U_L1
+        fs << result[s * (n + 1) + 18] << ","; // U_C2
         fs << result[s * (n + 1) + 19] << ","; // U_Cb1
         fs << result[s * (n + 1) + 20] << endl; // U_C1
     }
@@ -212,19 +212,19 @@ void fill_A(double **a, double U_Id1, double delta_t)
     a[14][14] = 1.0;
     a[15][15] = 1.0;
     a[16][16] = 1.0;
-    a[17][17] = 1.0;
+    a[17][17] = -C2 / delta_t;
     a[18][18] = -Cb1 / delta_t; // Связь с конденсатором Cb1
     a[19][19] = -C1 / delta_t;  // Связь с конденсатором C1
 
     // Заполнение недиагональных элементов на основе уравнений цепи
     a[0][16] = -1.0; // Связь между U_R1 и U_E2
-    a[0][17] = +1.0; // Связь с U_L1
+    a[0][17] = +1.0; // Связь с U_C2
 
     a[1][19] = -1.0; // Связь с U_C1
 
     a[2][15] = -1.0; // Связь с U_E1
     a[2][16] = -1.0; // Связь с U_E2
-    a[2][17] = 1.0;  // Связь с U_L1
+    a[2][17] = 1.0;  // Связь с U_C2
     a[2][18] = 1.0;  // Связь с U_Cb1
     a[2][19] = 1.0;  // Связь с U_C1
 
@@ -258,7 +258,7 @@ void fill_A(double **a, double U_Id1, double delta_t)
     // Линеаризация уравнения диода
     a[14][4] = -Id1 * exp(U_Id1 / MFt) / MFt;
 
-    a[17][7] = -L1 / delta_t; // Связь с индуктивностью
+    a[17][7] = 1.0; // Связь с индуктивностью
 
     a[18][8] = 1.0; // Связь с конденсатором Cb1
     a[19][9] = 1.0; // Связь с конденсатором C1
@@ -274,7 +274,7 @@ void fill_A(double **a, double U_Id1, double delta_t)
  * @param U_Id1 Напряжение на диоде Id1.
  * @param I_E1 Ток через источник E1.
  * @param I_E2 Ток через источник E2.
- * @param I_L1 Ток через индуктивность L1.
+ * @param I_C2 Ток через индуктивность C2.
  * @param I_Cb1 Ток через конденсатор Cb1.
  * @param I_C1 Ток через конденсатор C1.
  * @param I_R1 Ток через резистор R1.
@@ -284,10 +284,10 @@ void fill_A(double **a, double U_Id1, double delta_t)
  * @param I_Id1 Ток через диод Id1.
  * @param U_E1 Напряжение источника E1.
  * @param U_E2 Напряжение источника E2.
- * @param U_L1 Напряжение на индуктивности L1.
+ * @param U_C2 Напряжение на индуктивности C2.
  * @param U_Cb1 Напряжение на конденсаторе Cb1.
  * @param U_C1 Напряжение на конденсаторе C1.
- * @param I_L1_pred Предсказанный ток через индуктивность L1 из предыдущего шага.
+ * @param I_C2_pred Предсказанный ток через индуктивность C2 из предыдущего шага.
  * @param U_Cb1_pred Предсказанное напряжение на конденсаторе Cb1 из предыдущего шага.
  * @param U_C1_pred Предсказанное напряжение на конденсаторе C1 из предыдущего шага.
  * @param delta_t Текущий размер шага времени.
@@ -295,19 +295,19 @@ void fill_A(double **a, double U_Id1, double delta_t)
  * @param time Текущее время симуляции.
  */
 void fill_y(double *y, double U_R1, double U_R2, double U_Rb1, double U_Rb2,
-            double U_Id1, double I_E1, double I_E2, double I_L1, double I_Cb1, double I_C1,
-            double I_R1, double I_R2, double I_Rb1, double I_Rb2, double I_Id1, double U_E1, double U_E2, double U_L1, double U_Cb1, double U_C1,
-            double I_L1_pred, double U_Cb1_pred, double U_C1_pred, double delta_t, int n, double time)
+            double U_Id1, double I_E1, double I_E2, double I_C2, double I_Cb1, double I_C1,
+            double I_R1, double I_R2, double I_Rb1, double I_Rb2, double I_Id1, double U_E1, double U_E2, double U_C2, double U_Cb1, double U_C1,
+            double I_C2_pred, double U_Cb1_pred, double U_C1_pred, double delta_t, int n, double time)
 {
     // Определение системы уравнений на основе законов Кирхгофа и связей элементов цепи
-    y[0] = U_R1 - U_E2 + U_L1;
+    y[0] = U_R1 - U_E2 + U_C2;
     y[1] = U_R2 - U_C1;
-    y[2] = U_Rb1 - U_E1 - U_E2 + U_L1 + U_Cb1 + U_C1;
+    y[2] = U_Rb1 - U_E1 - U_E2 + U_C2 + U_Cb1 + U_C1;
     y[3] = U_Rb2 - U_Cb1;
     y[4] = U_Id1 - U_Cb1;
     y[5] = I_E1 + I_Rb1;
     y[6] = I_E2 + I_R1 + I_Rb1;
-    y[7] = I_L1 - I_R1 - I_Rb1;
+    y[7] = I_C2 - I_R1 - I_Rb1;
     y[8] = I_Cb1 - I_Rb1 + I_Rb2 + I_Id1;
     y[9] = I_C1 + I_R2 - I_Rb1;
     y[10] = I_R1 - U_R1 / R1;
@@ -317,7 +317,7 @@ void fill_y(double *y, double U_R1, double U_R2, double U_Rb1, double U_Rb2,
     y[14] = I_Id1 - Id1 * (exp(U_Id1 / MFt) - 1);
     y[15] = U_E1 - 1;
     y[16] = U_E2 - 10 * sin(2 * M_PI * time / 0.0001); // Временно-зависимый источник напряжения E2
-    y[17] = U_L1 - L1 * (I_L1 - I_L1_pred) / delta_t; // Связь напряжения на индуктивности
+    y[17] = I_C2 - C2 * (U_C2 - U_C2_pred) / delta_t; // Связь напряжения на индуктивности
     y[18] = I_Cb1 - Cb1 * (U_Cb1 - U_Cb1_pred) / delta_t; // Связь тока через конденсатор Cb1
     y[19] = I_C1 - C1 * (U_C1 - U_C1_pred) / delta_t; // Связь тока через конденсатор C1
 
@@ -341,7 +341,7 @@ void make_appr(double *result, int n)
     U_Id1 = appr;
     I_E1 = appr;
     I_E2 = appr;
-    I_L1 = appr;
+    I_C2 = appr;
     I_Cb1 = appr;
     I_C1 = appr;
     I_R1 = appr;
@@ -351,10 +351,10 @@ void make_appr(double *result, int n)
     I_Id1 = appr;
     U_E1 = appr;
     U_E2 = appr;
-    U_L1 = appr;
+    U_C2 = appr;
     U_Cb1 = appr;
     U_C1 = appr;
-    I_L1_pred = appr;
+    U_C2_pred = appr;
     U_Cb1_pred = appr;
     U_C1_pred = appr;
 
@@ -376,7 +376,7 @@ void add_phi(double *x)
     U_Id1 += x[4];
     I_E1 += x[5];
     I_E2 += x[6];
-    I_L1 += x[7];
+    I_C2 += x[7];
     I_Cb1 += x[8];
     I_C1 += x[9];
     I_R1 += x[10];
@@ -386,7 +386,7 @@ void add_phi(double *x)
     I_Id1 += x[14];
     U_E1 += x[15];
     U_E2 += x[16];
-    U_L1 += x[17];
+    U_C2 += x[17];
     U_Cb1 += x[18];
     U_C1 += x[19];
 }
@@ -408,7 +408,7 @@ void save_step_results(double *result, int n, int step, double time)
     result[step * (n + 1) + 5] = U_Id1;
     result[step * (n + 1) + 6] = I_E1;
     result[step * (n + 1) + 7] = I_E2;
-    result[step * (n + 1) + 8] = I_L1;
+    result[step * (n + 1) + 8] = I_C2;
     result[step * (n + 1) + 9] = I_Cb1;
     result[step * (n + 1) + 10] = I_C1;
     result[step * (n + 1) + 11] = I_R1;
@@ -418,7 +418,7 @@ void save_step_results(double *result, int n, int step, double time)
     result[step * (n + 1) + 15] = I_Id1;
     result[step * (n + 1) + 16] = U_E1;
     result[step * (n + 1) + 17] = U_E2;
-    result[step * (n + 1) + 18] = U_L1;
+    result[step * (n + 1) + 18] = U_C2;
     result[step * (n + 1) + 19] = U_Cb1;
     result[step * (n + 1) + 20] = U_C1;
 }
@@ -440,7 +440,7 @@ void return_past_results(double *result, int n, int step)
     U_Id1 = result[(step - 1) * (n + 1) + 5];
     I_E1 = result[(step - 1) * (n + 1) + 6];
     I_E2 = result[(step - 1) * (n + 1) + 7];
-    I_L1 = result[(step - 1) * (n + 1) + 8];
+    I_C2 = result[(step - 1) * (n + 1) + 8];
     I_Cb1 = result[(step - 1) * (n + 1) + 9];
     I_C1 = result[(step - 1) * (n + 1) + 10];
     I_R1 = result[(step - 1) * (n + 1) + 11];
@@ -450,7 +450,7 @@ void return_past_results(double *result, int n, int step)
     I_Id1 = result[(step - 1) * (n + 1) + 15];
     U_E1 = result[(step - 1) * (n + 1) + 16];
     U_E2 = result[(step - 1) * (n + 1) + 17];
-    U_L1 = result[(step - 1) * (n + 1) + 18];
+    U_C2 = result[(step - 1) * (n + 1) + 18];
     U_Cb1 = result[(step - 1) * (n + 1) + 19];
     U_C1 = result[(step - 1) * (n + 1) + 20];
 }
@@ -463,9 +463,10 @@ void return_past_results(double *result, int n, int step)
  */
 void get_pred_variables(double *result, int n, int step)
 {
-    I_L1_pred = result[(step - 1) * (n + 1) + 8];
+    // I_C2_pred = result[(step - 1) * (n + 1) + 8];
     U_Cb1_pred = result[(step - 1) * (n + 1) + 19];
     U_C1_pred = result[(step - 1) * (n + 1) + 20];
+    U_C2_pred = result[(step - 1) * (n + 1) + 18];
 }
 
 /**
@@ -514,9 +515,9 @@ int main()
             n_iter++;    // Увеличение счетчика итераций для Ньютона-Рафсона
 
             fill_A(a, U_Id1, delta_t); // Заполнение матрицы коэффициентов на основе текущего состояния
-            fill_y(y, U_R1, U_R2, U_Rb1, U_Rb2, U_Id1, I_E1, I_E2, I_L1, I_Cb1, I_C1,
-                   I_R1, I_R2, I_Rb1, I_Rb2, I_Id1, U_E1, U_E2, U_L1, U_Cb1, U_C1,
-                   I_L1_pred, U_Cb1_pred, U_C1_pred, delta_t, n, time); // Заполнение вектора правых частей
+            fill_y(y, U_R1, U_R2, U_Rb1, U_Rb2, U_Id1, I_E1, I_E2, I_C2, I_Cb1, I_C1,
+                   I_R1, I_R2, I_Rb1, I_Rb2, I_Id1, U_E1, U_E2, U_C2, U_Cb1, U_C1,
+                   U_C2_pred, U_Cb1_pred, U_C1_pred, delta_t, n, time); // Заполнение вектора правых частей
 
             // Раскомментируйте следующие строки для отладки
             // cout << "time: " << time << endl;
