@@ -464,9 +464,9 @@ void return_past_results(double *result, int n, int step)
 void get_pred_variables(double *result, int n, int step)
 {
     // I_C2_pred = result[(step - 1) * (n + 1) + 8];
+    U_C2_pred = result[(step - 1) * (n + 1) + 18];
     U_Cb1_pred = result[(step - 1) * (n + 1) + 19];
     U_C1_pred = result[(step - 1) * (n + 1) + 20];
-    U_C2_pred = result[(step - 1) * (n + 1) + 18];
 }
 
 /**

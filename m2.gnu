@@ -43,7 +43,7 @@ plot "result.csv" using 1:2 with lines linestyle 1 title "U_R1 (В)", \
      "result.csv" using 1:4 with lines linestyle 3 title "U_Rb1 (В)", \
      "result.csv" using 1:5 with lines linestyle 4 title "U_Rb2 (В)", \
      "result.csv" using 1:6 with lines linestyle 5 title "U_Id1 (В)", \
-     "result.csv" using 1:7 with lines linestyle 6 title "UL1 (В)", \
+     "result.csv" using 1:7 with lines linestyle 6 title "U_L1 (В)", \
      "result.csv" using 1:20 with lines linestyle 7 title "U_E1 (В)", \
      "result.csv" using 1:21 with lines linestyle 8 title "U_E2 (В)"
 

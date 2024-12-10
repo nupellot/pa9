@@ -17,7 +17,7 @@ set datafile separator ','
 set key top left
 
 # Использование окна x11
-set term x11
+set term wxt enhanced
 
 # Построение графика из файла result.csv, начиная со второй строки
 plot "result.csv" skip 1 using 1:21 with linespoints linestyle 1 title ""
